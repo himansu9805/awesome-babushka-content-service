@@ -1,0 +1,9 @@
+.vscode
+node_modules
+tmp
+venv
+__pycache__
+**.db
+**venv/
+
+commons
