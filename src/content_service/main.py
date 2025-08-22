@@ -7,7 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
+from content_service.api.v1.graphql_sdl import sdl_router
 from content_service.api.v1.posts import posts_router
+from content_service.graphql.schema import post_graphql
 from content_service.utils.commons import print_config
 
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +30,11 @@ api.add_middleware(
 )
 
 api.include_router(posts_router, prefix="/api/v1")
+api.include_router(sdl_router, prefix="/api/v1")
+# Mount GraphQL endpoint under the same API prefix
+api.include_router(
+    post_graphql, prefix="/api/v1/graphql", include_in_schema=False
+)
 
 
 @api.get("/", include_in_schema=False)
