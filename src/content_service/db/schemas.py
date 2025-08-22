@@ -1,5 +1,7 @@
 """Models for the auth service"""
 
+from uuid import uuid4
+
 from pydantic import BaseModel
 from pydantic.fields import Field
 
@@ -7,6 +9,11 @@ from pydantic.fields import Field
 class PostCreate(BaseModel):
     """Post creation model"""
 
+    post_id: str = Field(
+        None,
+        title="Post ID",
+        description="Unique identifier for the post",
+    )
     content: str = Field(
         ...,
         title="Post Content",
@@ -25,3 +32,7 @@ class PostCreate(BaseModel):
         min_length=1,
         examples=["johndoe"],
     )
+
+    def model_post_init(self, context):
+        super().model_post_init(context)
+        self.post_id = str(uuid4())
