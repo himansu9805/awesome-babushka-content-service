@@ -1,7 +1,9 @@
 """Service for handling authentication."""
 
 import json
+import logging
 
+from commons.authentication.models import CurrentUser
 from commons.database import MongoConnect
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
@@ -10,6 +12,8 @@ from pymongo.errors import DuplicateKeyError
 from content_service.core.config import settings
 from content_service.db.models import Post
 from content_service.db.schemas import PostCreate
+
+logger = logging.getLogger(__name__)
 
 
 class PostService:
@@ -26,10 +30,13 @@ class PostService:
         """Close the MongoDB connection."""
         self.mongo_connection.close()
 
-    async def create_post(self, post: PostCreate) -> JSONResponse:
+    async def create_post(
+        self, current_user: CurrentUser, post: PostCreate
+    ) -> JSONResponse:
         """Create a new post.
 
         Args:
+            current_user (CurrentUser): The current authenticated user.
             post (PostCreate): The post details to be created.
 
         Returns:
@@ -40,20 +47,25 @@ class PostService:
                 error during creation.
         """
         try:
-            new_post = Post(content=post.content, author=post.author)
+            new_post = Post(content=post.content, author=current_user.username)
             self.mongo_connection.get_collection(
                 settings.POSTS_COLLECTION
             ).insert_one(new_post.model_dump())
         except DuplicateKeyError:
+            logger.warning("Post with ID %s already exists", post.post_id)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Post already exists",
             )
         except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
+            logger.error("Error creating post: %s", e)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e),
             ) from e
+        logger.info("Post created successfully with ID %s", post.post_id)
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={"message": "Post created successfully"},
@@ -78,13 +90,60 @@ class PostService:
             ).find(filters, {"_id": 0})
             posts = json.loads(json.dumps(list(posts), default=str))
             if len(posts) == 0:
+                logger.warning(
+                    "No posts found for the given filter: %s", filters
+                )
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="No posts found for the given filter",
                 )
-            return JSONResponse(status_code=status.HTTP_200_OK, content=posts)
         except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
+            logger.error("Error retrieving posts: %s", e)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e),
             ) from e
+        logger.info(
+            "%s posts retrieved successfully for filters: %s",
+            len(posts),
+            filters,
+        )
+        return JSONResponse(status_code=status.HTTP_200_OK, content=posts)
+
+    async def delete_post(self, post_id: str) -> JSONResponse:
+        """Delete a post by ID.
+
+        Args:
+            post_id (str): The ID of the post to be deleted.
+
+        Returns:
+            JSONResponse: Response message indicating success or failure.
+
+        Raises:
+            HTTPException: If the post does not exist or if there is an
+                error during deletion.
+        """
+        try:
+            result = self.mongo_connection.get_collection(
+                settings.POSTS_COLLECTION
+            ).delete_one({"post_id": post_id})
+            if result.deleted_count == 0:
+                logger.warning("Post %s not found for deletion", post_id)
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Post not found",
+                )
+        except Exception as e:
+            logger.error("Error deleting post %s: %s", post_id, e)
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An error occurred while deleting the post",
+            )
+        logger.info("Post %s deleted successfully", post_id)
+        return JSONResponse(
+            status_code=status.HTTP_204_NO_CONTENT,
+        )

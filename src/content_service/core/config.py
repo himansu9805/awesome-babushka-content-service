@@ -10,12 +10,7 @@ class Settings:
         # pylint: disable=invalid-name
 
         # ------------- Authentication Config -------------
-        self.AUTH_URL: str = os.getenv(
-            "AUTH_URL", "http://localhost:8001/api/v1/token/validate"
-        )
-        self.DISABLE_AUTH: bool = (
-            os.getenv("DISABLE_AUTH", "false").lower() == "true"
-        )
+        self.AUTH_URL: str = os.getenv("AUTH_URL", "http://localhost:9000")
         # ------------- Authentication Config -------------
 
         # ------------- MongoDB Config -------------
