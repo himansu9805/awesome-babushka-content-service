@@ -34,8 +34,8 @@ async def create_post(
 
 @posts_router.get("/list")
 async def get_posts(
-    author: str = None,
-    post_id: str = None,
+    author: str | None = None,
+    post_id: str | None = None,
 ) -> JSONResponse:
     """Get posts by filter.
 
