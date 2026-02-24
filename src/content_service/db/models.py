@@ -27,12 +27,25 @@ class Post(BaseModel):
             "This is the content of the second post.",
         ],
     )
+    image_urls: list[str] | None = Field(
+        default=None,
+        title="Image URLs",
+        description="URLs of the uploaded images stored in object store",
+    )
     author: str = Field(
         ...,
         title="Author Username",
         description="Username of the author who created the post",
         min_length=1,
         examples=["johndoe"],
+    )
+    user_client: str = Field(
+        ...,
+        title="User Client",
+        description="Information of the client that sends the request",
+        examples=[
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        ],
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

@@ -49,7 +49,9 @@ class Settings:
         # ------------- JWT Config -------------
 
         # ------------- Email Config -------------
-        self.ENABLE_EMAIL: bool = os.getenv("ENABLE_EMAIL", "false").lower() == "true"
+        self.ENABLE_EMAIL: bool = (
+            os.getenv("ENABLE_EMAIL", "false").lower() == "true"
+        )
         self.NO_REPLY_EMAIL: str = os.getenv(
             "NO_REPLY_EMAIL", "noreply@awesomebabushka.com"
         )
@@ -57,6 +59,15 @@ class Settings:
         self.SMTP_PORT: int = int(os.getenv("SMTP_PORT", "1025"))
         self.HOST_NAME: str = "localhost:8000"
         # ------------- Email Config -------------
+
+        # ------------- MiniO Config -------------
+        self.MINIO_ENDPOINT = os.getenv(
+            "MINIO_ENDPOINT", "http://localhost:9000"
+        )
+        self.MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+        self.MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+        self.MINIO_BUCKET = os.getenv("MINIO_BUCKET", "awesome-babushka")
+        # ------------- MiniO Config -------------
 
 
 settings = Settings()
